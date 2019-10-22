@@ -1,8 +1,9 @@
+import { DialogEditProductComponent } from './dialog-edit-product/dialog-edit-product.component';
 import { ProductsService } from "./products.service";
 import { Component } from "@angular/core";
 import { Observer, Observable } from "rxjs";
 import { Product } from "./product.model";
-import { MatSnackBar, MatSnackBarConfig } from '@angular/material';
+import { MatSnackBar, MatSnackBarConfig, MatDialog } from '@angular/material';
 import { MaterialModule } from './material.module';
 
 @Component({
@@ -16,11 +17,13 @@ export class AppComponent {
   productsLoading: Product[];
   isLoading: boolean = false;
   productsIds: Product[];
-  newlyProducts: Product[] = [];
+  newlyProducts: Product[];
   productsToDelete: Product[] = [];
+  productsToEdit: Product[];
 
   constructor(private productsService: ProductsService,
-    private snackBar: MatSnackBar) {}
+              private snackBar: MatSnackBar,
+              private dialog: MatDialog) {}
 
   ngOnInit() {}
 
@@ -137,4 +140,35 @@ export class AppComponent {
         }
       );
   }
+
+  loadProductsToEdit() {
+    this.productsService.getProdutos()
+      .subscribe((prods) => this.productsToEdit = prods);
+
+  }
+  editProduct(p: Product) {
+    let newProduct: Product = {...p};
+    let dialogRef = this.dialog.open(DialogEditProductComponent, {width: '400', data: newProduct});
+    dialogRef.afterClosed()
+      .subscribe((res: Product) => {
+        // console.log(res);
+        if (res) {
+          this.productsService.editProduct(res)
+            .subscribe(
+              (resp) => {
+                let i = this.productsToEdit.findIndex(prod => p._id === prod._id);
+                if (i > 0) {
+                  this.productsToEdit[i] = resp;
+                }
+              },
+              (err) => {
+                console.error(err);
+              }
+
+            );
+        }
+      });
+
+  }
+
 }
